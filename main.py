@@ -295,87 +295,93 @@ def draw_moon_horizontal(phase):
                         LCD.pixel(x, y, LCD.WHITE)
 
 
-# ============================================
-# KSIĘŻYC - TEST NA CAŁYM EKRANIE 320 x 480
-# ============================================
-
 def draw_moon_part(phase, screen_y_start):
-    """
-    Rysuje odpowiednią część Księżyca.
-    
-    screen_y_start:
-        0   = górna połowa ekranu
-        240 = dolna połowa ekranu
-    """
 
-    # Pozycja Księżyca na CAŁYM ekranie
+    # Pozycja Księżyca na całym ekranie
     cx = 160
     cy = 145
     radius = 140
 
-    # Przechodzimy przez piksele aktualnego bufora
+    import math
+
+    # Nów
+    if phase <= 0.001 or phase >= 0.999:
+        return
+
+    # Położenie terminatora na powierzchni kuli.
+    #
+    # phase:
+    # 0.0  = nów
+    # 0.25 = pierwsza kwadra
+    # 0.5  = pełnia
+    # 0.75 = ostatnia kwadra
+    # 1.0  = nów
+    #
+    # cos daje:
+    # 0.25 -> 0
+    # 0.5  -> -1
+    # 0.75 -> 0
+
+    terminator = math.cos(2 * math.pi * phase)
+
     for y in range(240):
 
         screen_y = screen_y_start + y
 
-        # Czy ten wiersz może należeć do Księżyca?
         dy = screen_y - cy
 
         if abs(dy) > radius:
             continue
 
-        # Szerokość przekroju koła
-        half_width = int((radius * radius - dy * dy) ** 0.5)
+        # Szerokość tarczy Księżyca w tym wierszu
+        half_width = int(
+            (radius * radius - dy * dy) ** 0.5
+        )
 
         left = cx - half_width
         right = cx + half_width
 
-        if left < 0:
-            left = 0
+        # ---------------------------------------
+        # POŁOŻENIE TERMINATORA W TYM WIERSZU
+        # ---------------------------------------
 
-        if right > 319:
-            right = 319
+        # Współczynnik określający kształt elipsy
+        row_factor = half_width / radius
+
+        # Terminator przesuwa się wraz z wysokością
+        terminator_x = cx + terminator * half_width
+
+        # ---------------------------------------
+        # RYSOWANIE WIERSZA
+        # ---------------------------------------
 
         for x in range(left, right + 1):
 
-            dx = x - cx
+            if phase < 0.5:
 
-            # --------------------------------
-            # TERAZ LICZYMY TERMINATOR
-            # --------------------------------
+                # Nów -> pełnia
+                #
+                # Oświetlona jest prawa część.
+                # Terminator jest zakrzywiony.
 
-            # współrzędna pozioma w obrębie tarczy
-            nx = dx / radius
-
-            # faza:
-            # 0.0 = nów
-            # 0.25 = pierwsza kwadra
-            # 0.5 = pełnia
-            # 0.75 = ostatnia kwadra
-            # 1.0 = nów
-
-            if phase <= 0.5:
-
-                # rosnący Księżyc
-                limit = -1 + 4 * phase
-
-                if nx >= limit:
+                if x >= terminator_x:
                     LCD.pixel(x, y, LCD.WHITE)
 
             else:
 
-                # malejący Księżyc
-                limit = 3 - 4 * phase
+                # Pełnia -> nów
+                #
+                # Oświetlona jest lewa część.
 
-                if nx <= limit:
+                if x <= terminator_x:
                     LCD.pixel(x, y, LCD.WHITE)
 
 
 def draw_moon(phase):
 
-    # --------------------------------
+    # ==========================
     # GÓRNA POŁOWA
-    # --------------------------------
+    # ==========================
 
     LCD.fill(LCD.BLACK)
 
@@ -384,9 +390,9 @@ def draw_moon(phase):
     LCD.show_up()
 
 
-    # --------------------------------
+    # ==========================
     # DOLNA POŁOWA
-    # --------------------------------
+    # ==========================
 
     LCD.fill(LCD.BLACK)
 
@@ -404,10 +410,36 @@ if __name__ == '__main__':
     LCD = LCD_3inch5()
     LCD.bl_ctrl(100)
 
-    # TESTUJ TĘ WARTOŚĆ
-    phase = 1
+#     # TESTUJ TĘ WARTOŚĆ
+#     phase = 0.7
+# 
+#     draw_moon(phase)
+# 
+#     while True:
+#         time.sleep(1)
 
-    draw_moon(phase)
+    phases = [
+        0.0,
+        0.1,
+        0.2,
+        0.25,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.75,
+        0.8,
+        0.9,
+        1.0
+    ]
 
     while True:
-        time.sleep(1)
+
+        for phase in phases:
+
+            print("phase =", phase)
+
+            draw_moon(phase)
+
+            time.sleep(1)
