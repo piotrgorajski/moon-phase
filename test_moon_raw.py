@@ -31,8 +31,8 @@ for g in range(256):
     gr = g >> 2
     b = g >> 3
     c = (r << 11) | (gr << 5) | b
-    colors[2*g] = c & 0xff
-    colors[2*g + 1] = c >> 8
+    colors[2*g] = c >> 8
+    colors[2*g + 1] = c & 0xff
 
 # GORA ekranu: fizyczne y=0..239
 LCD.fill(LCD.BLACK)
