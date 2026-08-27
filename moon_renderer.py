@@ -5,7 +5,7 @@ from lcd_3inch5 import LCD_3inch5
 
 
 # =========================================================
-# USTAWIENIA GRAFIKI
+# USTAWIENIA
 # =========================================================
 
 MOON_FILE = "moon.raw"
@@ -17,7 +17,7 @@ MOON_X = 10
 
 
 # =========================================================
-# GEOMETRIA KSIĘŻYCA
+# GEOMETRIA
 # =========================================================
 
 CX = 160.0
@@ -41,13 +41,8 @@ LCD.bl_ctrl(100)
 
 
 # =========================================================
-# TABLICA GRAYSCALE -> RGB565
+# TABLICA RGB565
 # =========================================================
-
-# Przygotowujemy konwersję wszystkich 256 możliwych
-# wartości jasności tylko raz.
-#
-# Każdy kolor zajmuje 2 bajty.
 
 colors = bytearray(256 * 2)
 
@@ -65,7 +60,7 @@ for gray in range(256):
         b
     )
 
-    # Kolejność wymagana przez LCD.pixel()/framebuf
+    # Kolejność bajtów dla naszego LCD
     color = (
         ((color & 0xFF) << 8)
         |
@@ -80,8 +75,6 @@ for gray in range(256):
 # BUFOR JEDNEGO WIERSZA
 # =========================================================
 
-# 300 pikseli × 2 bajty RGB565
-
 row_buffer = bytearray(MOON_W * 2)
 
 row_fb = framebuf.FrameBuffer(
@@ -93,39 +86,30 @@ row_fb = framebuf.FrameBuffer(
 
 
 # =========================================================
-# RYSOWANIE JEDNEGO WIERSZA
+# GEOMETRIA WIERSZY
 # =========================================================
 
-def draw_moon_row(
-    gray_row,
-    global_y,
-    local_y,
-    phase
-):
+# Przygotowujemy geometrię Księżyca tylko raz.
+#
+# Dla każdego globalnego Y zapamiętujemy:
+#
+#   left
+#   right
+#   half_width
+#
+# Dzięki temu podczas każdego renderowania fazy
+# nie musimy ponownie wykonywać sqrt().
 
-    # -----------------------------------------------------
-    # Wyczyść cały wiersz.
-    #
-    # Dzięki temu wszystko poza Księżycem pozostaje czarne.
-    # -----------------------------------------------------
+row_left = [0] * MOON_H
+row_right = [0] * MOON_H
+row_half_width = [0.0] * MOON_H
 
-    for i in range(len(row_buffer)):
-        row_buffer[i] = 0
+for y in range(MOON_H):
 
-
-    # -----------------------------------------------------
-    # Pozycja wiersza względem środka Księżyca
-    # -----------------------------------------------------
-
-    dy = global_y - CY
+    dy = y - CY
 
     if abs(dy) > RADIUS:
-        return
-
-
-    # -----------------------------------------------------
-    # Szerokość tarczy w tym wierszu
-    # -----------------------------------------------------
+        continue
 
     half_width = math.sqrt(
         RADIUS * RADIUS
@@ -133,20 +117,35 @@ def draw_moon_row(
         dy * dy
     )
 
+    row_left[y] = int(CX - half_width)
+    row_right[y] = int(CX + half_width)
+    row_half_width[y] = half_width
 
-    left = int(CX - half_width)
-    right = int(CX + half_width)
+
+# =========================================================
+# FUNKCJA RYSUJĄCA JEDEN WIERSZ
+# =========================================================
+
+def draw_moon_row(
+    gray_row,
+    global_y,
+    local_y,
+    k
+):
+
+    left = row_left[global_y]
+    right = row_right[global_y]
+    half_width = row_half_width[global_y]
 
 
-    # -----------------------------------------------------
-    # Terminator
-    # -----------------------------------------------------
+    # Jeżeli ten wiersz nie należy do Księżyca
+    if right <= left:
+        return
 
-    k = math.cos(2 * math.pi * phase)
 
-    if phase >= 0.5:
-        k = -k
-
+    # =====================================================
+    # TERMINATOR
+    # =====================================================
 
     terminator_x = (
         CX
@@ -155,12 +154,13 @@ def draw_moon_row(
     )
 
 
-    # -----------------------------------------------------
-    # Granica jasnej części
-    # -----------------------------------------------------
+    # =====================================================
+    # GRANICA OŚWIETLONEJ CZĘŚCI
+    # =====================================================
 
-    if phase < 0.5:
+    if k <= 0:
 
+        # Przybywający / pierwsza połowa cyklu
         light_start = int(terminator_x)
 
         if light_start < left:
@@ -171,6 +171,7 @@ def draw_moon_row(
 
     else:
 
+        # Ubywający / druga połowa cyklu
         light_end = int(terminator_x)
 
         if light_end < left:
@@ -181,7 +182,22 @@ def draw_moon_row(
 
 
     # =====================================================
-    # BUDOWANIE WIERSZA RGB565
+    # ZEROWANIE WIERSZA
+    # =====================================================
+
+    # Tylko obszar wykorzystany przez Księżyc.
+    #
+    # Poza nim ekran i tak jest czarny.
+
+    start_i = 2 * (left - MOON_X)
+    end_i = 2 * (right - MOON_X + 1)
+
+    for i in range(start_i, end_i):
+        row_buffer[i] = 0
+
+
+    # =====================================================
+    # GENEROWANIE PIXELI
     # =====================================================
 
     for x in range(left, right + 1):
@@ -196,10 +212,10 @@ def draw_moon_row(
 
 
         # -------------------------------------------------
-        # USTALAMY JASNOŚĆ
+        # JASNA / CIEMNA STRONA
         # -------------------------------------------------
 
-        if phase < 0.5:
+        if k <= 0:
 
             if x >= light_start:
 
@@ -227,20 +243,19 @@ def draw_moon_row(
 
 
         # -------------------------------------------------
-        # RGB565
+        # GOTOWY KOLOR RGB565
         # -------------------------------------------------
 
-        row_buffer[2 * (x - left)] = colors[
-            2 * gray
-        ]
+        ci = gray << 1
 
-        row_buffer[2 * (x - left) + 1] = colors[
-            2 * gray + 1
-        ]
+        bi = 2 * (x - left)
+
+        row_buffer[bi] = colors[ci]
+        row_buffer[bi + 1] = colors[ci + 1]
 
 
     # =====================================================
-    # JEDEN BLIT ZAMIAST SETEK LCD.PIXEL()
+    # JEDEN BLIT
     # =====================================================
 
     LCD.blit(
@@ -251,14 +266,15 @@ def draw_moon_row(
 
 
 # =========================================================
-# RYSOWANIE CZĘŚCI KSIĘŻYCA
+# RYSOWANIE CZĘŚCI
 # =========================================================
 
 def draw_moon_part(
     phase,
     global_y_start,
     rows,
-    f
+    f,
+    k
 ):
 
     for local_y in range(rows):
@@ -277,21 +293,37 @@ def draw_moon_part(
             gray_row,
             global_y,
             local_y,
-            phase
+            k
         )
 
 
 # =========================================================
-# RYSOWANIE CAŁEGO KSIĘŻYCA
+# CAŁY KSIĘŻYC
 # =========================================================
 
 def draw_moon(phase):
+
+    # -----------------------------------------------------
+    # Ograniczenie zakresu
+    # -----------------------------------------------------
 
     if phase < 0.0:
         phase = 0.0
 
     if phase > 1.0:
         phase = 1.0
+
+
+    # -----------------------------------------------------
+    # COS LICZYMY TYLKO RAZ
+    # -----------------------------------------------------
+
+    k = math.cos(
+        2 * math.pi * phase
+    )
+
+    if phase >= 0.5:
+        k = -k
 
 
     # =====================================================
@@ -306,7 +338,8 @@ def draw_moon(phase):
         phase,
         0,
         240,
-        f
+        f,
+        k
     )
 
     LCD.show_up()
@@ -328,7 +361,8 @@ def draw_moon(phase):
         phase,
         240,
         60,
-        f
+        f,
+        k
     )
 
     LCD.show_down()
