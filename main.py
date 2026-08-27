@@ -43,5 +43,5 @@ def render_phases_in_loop():
 
 if __name__ == '__main__':
     print("MOON PHASE TEST")
-    # render_single_phase(0.25)
-    render_phases_in_loop()
+    render_single_phase(0.9)
+    # render_phases_in_loop()
