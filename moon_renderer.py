@@ -1,11 +1,10 @@
 import math
-import time
 
 from lcd_3inch5 import LCD_3inch5
 
 
 # =========================================================
-# USTAWIENIA
+# USTAWIENIA GRAFIKI
 # =========================================================
 
 MOON_FILE = "moon.raw"
@@ -13,21 +12,23 @@ MOON_FILE = "moon.raw"
 MOON_W = 300
 MOON_H = 300
 
-# Ekran logiczny przy rotate = 0 ma 320 px szerokości.
-# Obraz 300 px -> 10 px marginesu z lewej.
 MOON_X = 10
 
 
 # =========================================================
-# GEOMETRIA PRAWDZIWEGO OBRAZU 300x300
+# GEOMETRIA KSIĘŻYCA
 # =========================================================
 
-# Środek obrazu 300x300
-cx = 159.5
-cy = 149.5
+CX = 160.0
+CY = 149.5
+RADIUS = 149.5
 
-# Promień odpowiadający praktycznie całej tarczy
-radius = 149.5
+
+# =========================================================
+# JASNOŚĆ CIEMNEJ STRONY
+# =========================================================
+
+DARK_SIDE_BRIGHTNESS = 0.30
 
 
 # =========================================================
@@ -42,17 +43,42 @@ LCD.bl_ctrl(100)
 # GRAYSCALE -> RGB565
 # =========================================================
 
-def rgb565_gray(g):
+def rgb565_gray(gray):
 
-    r = g >> 3
-    gr = g >> 2
-    b = g >> 3
+    r = gray >> 3
+    g = gray >> 2
+    b = gray >> 3
 
-    color = (r << 11) | (gr << 5) | b
+    color = (
+        (r << 11)
+        |
+        (g << 5)
+        |
+        b
+    )
 
-    # framebuf RGB565 na RP2040 zapisuje kolory little-endian,
-    # więc dla LCD.pixel() musimy zamienić bajty.
-    return ((color & 0xFF) << 8) | (color >> 8)
+    # LCD.pixel() wymaga tutaj zamiany kolejności bajtów.
+    return (
+        ((color & 0xFF) << 8)
+        |
+        (color >> 8)
+    )
+
+
+# =========================================================
+# ODCZYT TEKSTURY
+# =========================================================
+
+def read_texture_row(f):
+
+    row = f.read(MOON_W)
+
+    if len(row) != MOON_W:
+        raise RuntimeError(
+            "moon.raw ma zly rozmiar"
+        )
+
+    return row
 
 
 # =========================================================
@@ -62,29 +88,9 @@ def rgb565_gray(g):
 def draw_moon_part(phase, global_y_start, rows, f):
 
     # -----------------------------------------------------
-    # NÓW
-    # -----------------------------------------------------
-
-    if phase <= 0.001 or phase >= 0.999:
-
-        # Nic nie rysujemy, ale musimy przejść przez
-        # odpowiednią liczbę wierszy pliku.
-        for _ in range(rows):
-            gray = f.read(MOON_W)
-
-            if len(gray) != MOON_W:
-                raise RuntimeError(
-                    "moon.raw ma zly rozmiar"
-                )
-
-        return
-
-
-    # -----------------------------------------------------
     # TERMINATOR
     #
-    # DOKŁADNIE TA SAMA MATEMATYKA,
-    # KTÓRĄ WYPRACOWALIŚMY WCZEŚNIEJ
+    # Nasza wcześniejsza, sprawdzona matematyka.
     # -----------------------------------------------------
 
     k = math.cos(2 * math.pi * phase)
@@ -101,110 +107,137 @@ def draw_moon_part(phase, global_y_start, rows, f):
 
         global_y = global_y_start + local_y
 
-        gray = f.read(MOON_W)
+        gray_row = read_texture_row(f)
 
-        if len(gray) != MOON_W:
-            raise RuntimeError(
-                "moon.raw ma zly rozmiar"
-            )
+        dy = global_y - CY
 
-
-        dy = global_y - cy
-
-        if abs(dy) > radius:
+        if abs(dy) > RADIUS:
             continue
 
 
         # Szerokość tarczy w tym wierszu
         half_width = math.sqrt(
-            radius * radius - dy * dy
+            RADIUS * RADIUS
+            -
+            dy * dy
         )
 
-
-        left = int(cx - half_width)
-        right = int(cx + half_width)
+        left = int(CX - half_width)
+        right = int(CX + half_width)
 
 
         # Zakrzywiony terminator
-        terminator_x = cx + k * half_width
+        terminator_x = (
+            CX
+            +
+            k * half_width
+        )
 
 
-        # -------------------------------------------------
-        # PRZYBYWAJĄCY KSIĘŻYC
-        # -------------------------------------------------
+        # =================================================
+        # PRZYBYWAJĄCY
+        # =================================================
 
         if phase < 0.5:
 
-            start_x = int(terminator_x)
+            light_start = int(terminator_x)
 
-            if start_x < left:
-                start_x = left
+            if light_start < left:
+                light_start = left
 
-            if start_x > right:
-                start_x = right
+            if light_start > right:
+                light_start = right
 
 
-            for x in range(start_x, right + 1):
+            for x in range(left, right + 1):
 
                 tx = x - MOON_X
 
                 if tx < 0 or tx >= MOON_W:
                     continue
 
-                g = gray[tx]
+                original_gray = gray_row[tx]
 
-                # UWAGA:
-                # LCD.pixel() dostaje bezpośrednio RGB565.
-                color = rgb565_gray(g)
+                if x >= light_start:
+
+                    # Oświetlona część
+                    gray = original_gray
+
+                else:
+
+                    # Ciemna część — nadal widoczna,
+                    # ale mocno przyciemniona.
+                    gray = int(
+                        original_gray
+                        * DARK_SIDE_BRIGHTNESS
+                    )
 
                 LCD.pixel(
                     x,
                     local_y,
-                    color
+                    rgb565_gray(gray)
                 )
 
 
-        # -------------------------------------------------
-        # UBYWAJĄCY KSIĘŻYC
-        # -------------------------------------------------
+        # =================================================
+        # UBYWAJĄCY
+        # =================================================
 
         else:
 
-            end_x = int(terminator_x)
+            light_end = int(terminator_x)
 
-            if end_x < left:
-                end_x = left
+            if light_end < left:
+                light_end = left
 
-            if end_x > right:
-                end_x = right
+            if light_end > right:
+                light_end = right
 
 
-            for x in range(left, end_x + 1):
+            for x in range(left, right + 1):
 
                 tx = x - MOON_X
 
                 if tx < 0 or tx >= MOON_W:
                     continue
 
-                g = gray[tx]
+                original_gray = gray_row[tx]
 
-                color = rgb565_gray(g)
+                if x <= light_end:
+
+                    # Oświetlona część
+                    gray = original_gray
+
+                else:
+
+                    # Ciemna część
+                    gray = int(
+                        original_gray
+                        * DARK_SIDE_BRIGHTNESS
+                    )
 
                 LCD.pixel(
                     x,
                     local_y,
-                    color
+                    rgb565_gray(gray)
                 )
 
 
 # =========================================================
-# CAŁY KSIĘŻYC
+# RYSOWANIE CAŁEGO KSIĘŻYCA
 # =========================================================
 
 def draw_moon(phase):
 
+    if phase < 0.0:
+        phase = 0.0
+
+    if phase > 1.0:
+        phase = 1.0
+
+
     # =====================================================
-    # GÓRNA POŁOWA
+    # GÓRNA CZĘŚĆ
     # =====================================================
 
     f = open(MOON_FILE, "rb")
@@ -224,12 +257,11 @@ def draw_moon(phase):
 
 
     # =====================================================
-    # DOLNA POŁOWA
+    # DOLNA CZĘŚĆ
     # =====================================================
 
     f = open(MOON_FILE, "rb")
 
-    # Pomijamy pierwsze 240 wierszy obrazu.
     f.seek(240 * MOON_W)
 
     LCD.fill(LCD.BLACK)
@@ -244,29 +276,3 @@ def draw_moon(phase):
     LCD.show_down()
 
     f.close()
-
-
-# =========================================================
-# MAIN
-# =========================================================
-
-if __name__ == '__main__':
-
-    phase = 0.25
-
-    print("MOON PHASE TEST")
-    print("phase =", phase)
-
-    start = time.ticks_ms()
-
-    draw_moon(phase)
-
-    elapsed = time.ticks_diff(
-        time.ticks_ms(),
-        start
-    )
-
-    print("Render:", elapsed, "ms")
-
-    while True:
-        time.sleep(1)
