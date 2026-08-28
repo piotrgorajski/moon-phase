@@ -1,17 +1,14 @@
 import framebuf
-
 from lcd_3inch5 import LCD_3inch5
 
 
 MOON_W = 300
 MOON_H = 300
-
 MOON_X = 10
 
 LCD = LCD_3inch5()
 LCD.bl_ctrl(100)
 
-f = open("moon_bright.raw", "rb")
 
 row = bytearray(MOON_W * 2)
 
@@ -21,6 +18,14 @@ fb = framebuf.FrameBuffer(
     1,
     framebuf.RGB565
 )
+
+
+f = open("moon_bright565.raw", "rb")
+
+
+# =========================================================
+# GÓRNA CZĘŚĆ
+# =========================================================
 
 LCD.fill(LCD.BLACK)
 
@@ -41,12 +46,10 @@ for y in range(240):
 
 LCD.show_up()
 
-f.close()
 
-
-f = open("moon_bright.raw", "rb")
-
-f.seek(240 * MOON_W * 2)
+# =========================================================
+# DOLNA CZĘŚĆ
+# =========================================================
 
 LCD.fill(LCD.BLACK)
 
@@ -66,6 +69,7 @@ for y in range(60):
     )
 
 LCD.show_down()
+
 
 f.close()
 

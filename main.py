@@ -1,5 +1,5 @@
 import time
-from new_renderer import draw_moon
+from moon_565_renderer import draw_moon
 
 def render_single_phase(phase):
     print("phase =", phase)
@@ -43,5 +43,5 @@ def render_phases_in_loop():
 
 if __name__ == '__main__':
     print("MOON PHASE TEST")
-    render_single_phase(0.9)
+    render_single_phase(1.0)
     # render_phases_in_loop()
