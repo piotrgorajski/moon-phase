@@ -16,9 +16,8 @@ MOON_H = 300
 
 MOON_X = 10
 
-
 # =========================================================
-# GEOMETRIA
+# GEOMETRIA KSIĘŻYCA
 # =========================================================
 
 CX = 160.0
@@ -50,12 +49,12 @@ row_fb = framebuf.FrameBuffer(
 
 # =========================================================
 # GEOMETRIA WIERSZY
+# Liczymy tylko raz przy uruchomieniu.
 # =========================================================
 
 row_left = [0] * MOON_H
 row_right = [0] * MOON_H
 row_half_width = [0.0] * MOON_H
-
 
 for y in range(MOON_H):
 
@@ -68,19 +67,13 @@ for y in range(MOON_H):
         RADIUS * RADIUS - dy * dy
     )
 
-    row_left[y] = int(
-        CX - half_width
-    )
-
-    row_right[y] = int(
-        CX + half_width
-    )
-
+    row_left[y] = int(CX - half_width)
+    row_right[y] = int(CX + half_width)
     row_half_width[y] = half_width
 
 
 # =========================================================
-# RYSOWANIE WIERSZA
+# RYSOWANIE JEDNEGO WIERSZA
 # =========================================================
 
 def draw_moon_row(
@@ -88,30 +81,19 @@ def draw_moon_row(
     dark_row,
     global_y,
     local_y,
-    k
+    terminator
 ):
 
     left = row_left[global_y]
     right = row_right[global_y]
-
     half_width = row_half_width[global_y]
-
 
     if right <= left:
         return
 
 
     # -----------------------------------------------------
-    # NASZA SPRAWDZONA MATEMATYKA TERMINATORA
-    # -----------------------------------------------------
-
-    terminator_x = (
-        CX + k * half_width
-    )
-
-
-    # -----------------------------------------------------
-    # CAŁY WIERSZ NAJPIERW CIEMNY
+    # Najpierw cały Księżyc jako ciemny.
     # -----------------------------------------------------
 
     start = 2 * (left - MOON_X)
@@ -123,22 +105,35 @@ def draw_moon_row(
     if end > MOON_W * 2:
         end = MOON_W * 2
 
-
     if start < end:
-
-        row_buffer[start:end] = \
-            dark_row[start:end]
+        row_buffer[start:end] = dark_row[start:end]
 
 
     # -----------------------------------------------------
+    # Terminator.
+    #
+    # terminator jest względną pozycją:
+    #
+    # -1.0 = lewa krawędź
+    #  0.0 = środek
+    # +1.0 = prawa krawędź
+    # -----------------------------------------------------
+
+    terminator_x = (
+        CX + terminator * half_width
+    )
+
+
+    # =====================================================
     # FAZA PRZYBYWAJĄCA
-    # -----------------------------------------------------
+    # 0.0 → 0.5
+    #
+    # Jasna część jest po PRAWEJ.
+    # =====================================================
 
-    if k <= 0:
+    if terminator <= 0.0:
 
-        light_start = int(
-            terminator_x
-        )
+        light_start = int(terminator_x)
 
         if light_start < left:
             light_start = left
@@ -146,15 +141,8 @@ def draw_moon_row(
         if light_start > right:
             light_start = right
 
-
-        src_start = 2 * (
-            light_start - MOON_X
-        )
-
-        src_end = 2 * (
-            right - MOON_X + 1
-        )
-
+        src_start = 2 * (light_start - MOON_X)
+        src_end = 2 * (right - MOON_X + 1)
 
         if src_start < 0:
             src_start = 0
@@ -162,25 +150,21 @@ def draw_moon_row(
         if src_end > MOON_W * 2:
             src_end = MOON_W * 2
 
-
         if src_start < src_end:
-
-            row_buffer[
-                src_start:src_end
-            ] = bright_row[
-                src_start:src_end
-            ]
+            row_buffer[src_start:src_end] = \
+                bright_row[src_start:src_end]
 
 
-    # -----------------------------------------------------
+    # =====================================================
     # FAZA UBYWAJĄCA
-    # -----------------------------------------------------
+    # 0.5 → 1.0
+    #
+    # Jasna część jest po LEWEJ.
+    # =====================================================
 
     else:
 
-        light_end = int(
-            terminator_x
-        )
+        light_end = int(terminator_x)
 
         if light_end < left:
             light_end = left
@@ -188,15 +172,8 @@ def draw_moon_row(
         if light_end > right:
             light_end = right
 
-
-        src_start = 2 * (
-            left - MOON_X
-        )
-
-        src_end = 2 * (
-            light_end - MOON_X + 1
-        )
-
+        src_start = 2 * (left - MOON_X)
+        src_end = 2 * (light_end - MOON_X + 1)
 
         if src_start < 0:
             src_start = 0
@@ -204,18 +181,13 @@ def draw_moon_row(
         if src_end > MOON_W * 2:
             src_end = MOON_W * 2
 
-
         if src_start < src_end:
-
-            row_buffer[
-                src_start:src_end
-            ] = bright_row[
-                src_start:src_end
-            ]
+            row_buffer[src_start:src_end] = \
+                bright_row[src_start:src_end]
 
 
     # -----------------------------------------------------
-    # RYSUJ GOTOWY WIERSZ
+    # Gotowy wiersz → LCD
     # -----------------------------------------------------
 
     LCD.blit(
@@ -234,15 +206,12 @@ def draw_moon_part(
     rows,
     bright_file,
     dark_file,
-    k
+    terminator
 ):
 
     for local_y in range(rows):
 
-        global_y = (
-            global_y_start + local_y
-        )
-
+        global_y = global_y_start + local_y
 
         bright_row = bright_file.read(
             MOON_W * 2
@@ -251,7 +220,6 @@ def draw_moon_part(
         dark_row = dark_file.read(
             MOON_W * 2
         )
-
 
         if len(bright_row) != MOON_W * 2:
             raise RuntimeError(
@@ -263,13 +231,12 @@ def draw_moon_part(
                 "moon_dark565.raw ma zly rozmiar"
             )
 
-
         draw_moon_row(
             bright_row,
             dark_row,
             global_y,
             local_y,
-            k
+            terminator
         )
 
 
@@ -280,7 +247,7 @@ def draw_moon_part(
 def draw_moon(phase):
 
     # -----------------------------------------------------
-    # OGRANICZENIE FAZY
+    # Ograniczenie fazy do 0.0–1.0
     # -----------------------------------------------------
 
     if phase < 0.0:
@@ -291,15 +258,20 @@ def draw_moon(phase):
 
 
     # -----------------------------------------------------
-    # TERMINATOR
+    # MAPOWANIE FAZY NA POZYCJĘ TERMINATORA
+    #
+    # 0.00 → -1.0  NÓW
+    # 0.25 →  0.0  KWADRA
+    # 0.50 → +1.0  PEŁNIA
+    # 0.75 →  0.0  KWADRA
+    # 1.00 → -1.0  NÓW
+    #
+    # To jest okresowa funkcja cosinus.
     # -----------------------------------------------------
 
-    k = math.cos(
-        2 * math.pi * phase
+    terminator = -math.cos(
+        2.0 * math.pi * phase
     )
-
-    if phase >= 0.5:
-        k = -k
 
 
     # =====================================================
@@ -316,21 +288,17 @@ def draw_moon(phase):
         "rb"
     )
 
-
     LCD.fill(LCD.BLACK)
-
 
     draw_moon_part(
         0,
         240,
         bright_file,
         dark_file,
-        k
+        terminator
     )
 
-
     LCD.show_up()
-
 
     bright_file.close()
     dark_file.close()
@@ -350,31 +318,23 @@ def draw_moon(phase):
         "rb"
     )
 
+    # Przeskakujemy do wiersza 240.
+    offset = 240 * MOON_W * 2
 
-    # Pomijamy pierwsze 240 wierszy
-    bright_file.seek(
-        240 * MOON_W * 2
-    )
-
-    dark_file.seek(
-        240 * MOON_W * 2
-    )
-
+    bright_file.seek(offset)
+    dark_file.seek(offset)
 
     LCD.fill(LCD.BLACK)
-
 
     draw_moon_part(
         240,
         60,
         bright_file,
         dark_file,
-        k
+        terminator
     )
 
-
     LCD.show_down()
-
 
     bright_file.close()
     dark_file.close()
