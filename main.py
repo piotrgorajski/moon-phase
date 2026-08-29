@@ -1,5 +1,5 @@
 import time
-from moon_565_renderer import draw_moon
+from moon_renderer import draw_moon
 
 def render_single_phase(phase):
     print("phase =", phase)
