@@ -1,47 +1,120 @@
 import time
-from moon_renderer import draw_moon
 
-def render_single_phase(phase):
-    print("phase =", phase)
-    start = time.ticks_ms()
-    draw_moon(phase)
-    elapsed = time.ticks_diff(
-        time.ticks_ms(),
-        start
+from moon_phase import moon_phase
+from moon_renderer import draw_moon, LCD
+
+
+# =========================================================
+# DATA TESTOWA
+# =========================================================
+
+YEAR = 2026
+MONTH = 8
+DAY = 27
+
+HOUR = 0
+MINUTE = 0
+
+
+# =========================================================
+# FAZA KSIĘŻYCA
+# =========================================================
+
+phase, illumination, phase_name = moon_phase(
+    YEAR,
+    MONTH,
+    DAY,
+    HOUR,
+    MINUTE
+)
+
+
+print("MOON UI TEST")
+print()
+
+print(
+    "Date: %04d-%02d-%02d"
+    % (
+        YEAR,
+        MONTH,
+        DAY
     )
-    print("Render:", elapsed, "ms")
+)
 
-    while True:
-        time.sleep(1)
+print(
+    "Phase: %.4f"
+    % phase
+)
 
-def render_phases_in_loop():
-    phases = [
-        0.0,
-        0.1,
-        0.2,
-        0.25,
-        0.3,
-        0.4,
-        0.5,
-        0.6,
-        0.7,
-        0.75,
-        0.8,
-        0.9,
-        1.0
-    ]
-        
-    while True:
-        for phase in phases:
-            print("phase =", phase)
-            draw_moon(phase)
-            time.sleep(0.5)
+print(
+    "Illumination: %.1f%%"
+    % illumination
+)
 
-# ============================================
-# MAIN
-# ============================================
+print(
+    "Phase name: %s"
+    % phase_name
+)
 
-if __name__ == '__main__':
-    print("MOON PHASE TEST")
-    # render_single_phase(0.9)
-    render_phases_in_loop()
+
+# =========================================================
+# KSIĘŻYC
+# =========================================================
+
+draw_moon(phase)
+
+
+# =========================================================
+# DOLNA CZĘŚĆ UI
+#
+# Nie czyścimy ekranu!
+# Dolne 60 px zawiera już Księżyc.
+# =========================================================
+
+
+# Data
+date_text = (
+    "%02d.%02d.%04d"
+    % (
+        DAY,
+        MONTH,
+        YEAR
+    )
+)
+
+LCD.text(
+    date_text,
+    110,
+    75,
+    LCD.WHITE
+)
+
+
+# Oświetlenie
+illumination_text = (
+    "%.1f%%"
+    % illumination
+)
+
+LCD.text(
+    illumination_text,
+    125,
+    110,
+    LCD.WHITE
+)
+
+
+# Nazwa fazy
+LCD.text(
+    phase_name,
+    75,
+    145,
+    LCD.WHITE
+)
+
+
+LCD.show_down()
+
+
+while True:
+    time.sleep(1)
