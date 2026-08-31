@@ -1,21 +1,20 @@
-# test_moon_phase.py
-
 from moon_phase import moon_phase
 
 
 tests = [
+    (2026, 8, 27, 0, 0),
     (2026, 8, 28, 0, 0),
+    (2026, 8, 28, 6, 0),
     (2026, 8, 28, 12, 0),
     (2026, 8, 28, 18, 0),
-
     (2026, 8, 29, 0, 0),
     (2026, 8, 29, 12, 0),
-
     (2026, 9, 3, 12, 0),
+    (2026, 9, 4, 12, 0),
 ]
 
 
-print("MOON PHASE TEST")
+print("MEEUS MOON PHASE TEST")
 print()
 
 
@@ -32,12 +31,12 @@ for (
         month,
         day,
         hour,
-        minute
+        minute,
+        2
     )
 
-
     print(
-        "%04d-%02d-%02d %02d:%02d UTC"
+        "%04d-%02d-%02d %02d:%02d"
         % (
             year,
             month,
@@ -48,12 +47,12 @@ for (
     )
 
     print(
-        "phase = %.4f"
+        "phase = %.5f"
         % phase
     )
 
     print(
-        "illumination = %.1f%%"
+        "illumination = %.2f%%"
         % illumination
     )
 
