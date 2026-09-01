@@ -2,6 +2,7 @@ import time
 
 from moon_phase import moon_phase
 from moon_renderer import draw_moon, LCD
+from ui import draw_centered
 
 
 # =========================================================
@@ -33,12 +34,8 @@ print("MOON UI TEST")
 print()
 
 print(
-    "Date: %04d-%02d-%02d"
-    % (
-        YEAR,
-        MONTH,
-        DAY
-    )
+    "Date: %04d-%02d-%04d"
+    % (YEAR, MONTH, DAY)
 )
 
 print(
@@ -66,13 +63,13 @@ draw_moon(phase)
 
 # =========================================================
 # DOLNA CZĘŚĆ UI
-#
-# Nie czyścimy ekranu!
-# Dolne 60 px zawiera już Księżyc.
 # =========================================================
 
 
-# Data
+# ---------------------------------------------------------
+# DATA
+# ---------------------------------------------------------
+
 date_text = (
     "%02d.%02d.%04d"
     % (
@@ -82,36 +79,46 @@ date_text = (
     )
 )
 
-LCD.text(
+draw_centered(
+    LCD,
     date_text,
-    110,
     75,
     LCD.WHITE
 )
 
 
-# Oświetlenie
+# ---------------------------------------------------------
+# FAZA
+# ---------------------------------------------------------
+
+draw_centered(
+    LCD,
+    phase_name,
+    100,
+    LCD.WHITE
+)
+
+
+# ---------------------------------------------------------
+# OŚWIETLENIE
+# ---------------------------------------------------------
+
 illumination_text = (
     "%.1f%%"
     % illumination
 )
 
-LCD.text(
+draw_centered(
+    LCD,
     illumination_text,
     125,
-    110,
     LCD.WHITE
 )
 
 
-# Nazwa fazy
-LCD.text(
-    phase_name,
-    75,
-    145,
-    LCD.WHITE
-)
-
+# =========================================================
+# WYŚWIETLENIE
+# =========================================================
 
 LCD.show_down()
 

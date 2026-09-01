@@ -18,7 +18,7 @@ TP_IRQ   = 17
 
 class LCD_3inch5(framebuf.FrameBuffer):
 
-    def __init__(self):
+    def __init__(self):      
         self.RED   =   0x07E0
         self.GREEN =   0x001f
         self.BLUE  =   0xf800
@@ -45,10 +45,21 @@ class LCD_3inch5(framebuf.FrameBuffer):
         self.dc(1)
         self.rst(1)
         self.tp_cs(1)
-        self.spi = SPI(1,6_000_000)
-        print(self.spi)  
-        self.spi = SPI(1,baudrate=40_000_000,sck=Pin(LCD_SCK),mosi=Pin(LCD_MOSI),miso=Pin(LCD_MISO))
-        print(self.spi)      
+
+        # Below code was causing LCD issues during cold start
+        # self.spi = SPI(1,6_000_000)
+        # print(self.spi)  
+        # self.spi = SPI(1,baudrate=40_000_000,sck=Pin(LCD_SCK),mosi=Pin(LCD_MOSI),miso=Pin(LCD_MISO))
+        # print(self.spi)
+        
+        self.spi = SPI(
+            1,
+            baudrate=40_000_000,
+            sck=Pin(LCD_SCK),
+            mosi=Pin(LCD_MOSI),
+            miso=Pin(LCD_MISO)
+        )
+        
         self.buffer = bytearray(self.height * self.width * 2)
         super().__init__(self.buffer, self.width, self.height, framebuf.RGB565)
         self.init_display()
@@ -213,13 +224,14 @@ class LCD_3inch5(framebuf.FrameBuffer):
         self.cs(0)
         self.spi.write(self.buffer)
         self.cs(1)
-    def bl_ctrl(self,duty):
-        pwm = PWM(Pin(LCD_BL))
-        pwm.freq(1000)
-        if(duty>=100):
-            pwm.duty_u16(65535)
+    def bl_ctrl(self, duty):
+        self.pwm = PWM(Pin(LCD_BL))
+        self.pwm.freq(1000)
+
+        if duty >= 100:
+            self.pwm.duty_u16(65535)
         else:
-            pwm.duty_u16(655*duty)
+            self.pwm.duty_u16(655 * duty)
 
     def touch_get(self): 
         if self.irq() == 0:
