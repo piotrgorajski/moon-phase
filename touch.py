@@ -45,7 +45,7 @@ def get_action(LCD):
     x, y = touch
     
     # Debug logx
-    print("x = " + str(x) + " y = " + str(y))
+    # print("x = " + str(x) + " y = " + str(y))
 
     # Dolny pasek
     if y >= 310:

@@ -3,125 +3,248 @@ import time
 from moon_phase import moon_phase
 from moon_renderer import draw_moon, LCD
 from ui import draw_centered
+from touch import get_action
 
 
 # =========================================================
-# DATA TESTOWA
+# DZISIEJSZA DATA - NA RAZIE TESTOWA
 # =========================================================
 
-YEAR = 2026
-MONTH = 8
-DAY = 27
+TODAY_YEAR = 2026
+TODAY_MONTH = 8
+TODAY_DAY = 27
 
 HOUR = 0
 MINUTE = 0
 
 
 # =========================================================
-# FAZA KSIĘŻYCA
+# AKTUALNIE OGLĄDANA DATA
 # =========================================================
 
-phase, illumination, phase_name = moon_phase(
-    YEAR,
-    MONTH,
-    DAY,
-    HOUR,
-    MINUTE
-)
-
-
-print("MOON UI TEST")
-print()
-
-print(
-    "Date: %04d-%02d-%04d"
-    % (YEAR, MONTH, DAY)
-)
-
-print(
-    "Phase: %.4f"
-    % phase
-)
-
-print(
-    "Illumination: %.1f%%"
-    % illumination
-)
-
-print(
-    "Phase name: %s"
-    % phase_name
-)
+VIEW_YEAR = TODAY_YEAR
+VIEW_MONTH = TODAY_MONTH
+VIEW_DAY = TODAY_DAY
 
 
 # =========================================================
-# KSIĘŻYC
+# ZMIANA DATY
 # =========================================================
 
-draw_moon(phase)
+def change_day(year, month, day, delta):
 
-
-# =========================================================
-# DOLNA CZĘŚĆ UI
-# =========================================================
-
-
-# ---------------------------------------------------------
-# DATA
-# ---------------------------------------------------------
-
-date_text = (
-    "%02d.%02d.%04d"
-    % (
-        DAY,
-        MONTH,
-        YEAR
+    timestamp = time.mktime(
+        (
+            year,
+            month,
+            day,
+            12,
+            0,
+            0,
+            0,
+            0
+        )
     )
-)
 
-draw_centered(
-    LCD,
-    date_text,
-    75,
-    LCD.WHITE
-)
+    timestamp += delta * 86400
 
+    new_date = time.localtime(timestamp)
 
-# ---------------------------------------------------------
-# FAZA
-# ---------------------------------------------------------
-
-draw_centered(
-    LCD,
-    phase_name,
-    100,
-    LCD.WHITE
-)
-
-
-# ---------------------------------------------------------
-# OŚWIETLENIE
-# ---------------------------------------------------------
-
-illumination_text = (
-    "%.1f%%"
-    % illumination
-)
-
-draw_centered(
-    LCD,
-    illumination_text,
-    125,
-    LCD.WHITE
-)
+    return (
+        new_date[0],
+        new_date[1],
+        new_date[2]
+    )
 
 
 # =========================================================
-# WYŚWIETLENIE
+# RYSOWANIE EKRANU
 # =========================================================
 
-LCD.show_down()
+def draw_screen():
 
+    global VIEW_YEAR
+    global VIEW_MONTH
+    global VIEW_DAY
+
+    # -----------------------------------------------------
+    # FAZA KSIĘŻYCA
+    # -----------------------------------------------------
+
+    phase, illumination, phase_name = moon_phase(
+        VIEW_YEAR,
+        VIEW_MONTH,
+        VIEW_DAY,
+        HOUR,
+        MINUTE
+    )
+
+
+    # -----------------------------------------------------
+    # DEBUG
+    # -----------------------------------------------------
+
+    print()
+    print("DATE: %04d-%02d-%02d" %
+          (
+              VIEW_YEAR,
+              VIEW_MONTH,
+              VIEW_DAY
+          ))
+
+    print("Phase: %.4f" % phase)
+    print("Illumination: %.1f%%" % illumination)
+    print("Phase name: %s" % phase_name)
+
+
+    # -----------------------------------------------------
+    # KSIĘŻYC
+    # -----------------------------------------------------
+
+    draw_moon(phase)
+
+
+    # -----------------------------------------------------
+    # DATA
+    # -----------------------------------------------------
+
+    date_text = (
+        "%02d.%02d.%04d"
+        % (
+            VIEW_DAY,
+            VIEW_MONTH,
+            VIEW_YEAR
+        )
+    )
+
+    draw_centered(
+        LCD,
+        date_text,
+        75,
+        LCD.WHITE
+    )
+
+
+    # -----------------------------------------------------
+    # FAZA
+    # -----------------------------------------------------
+
+    draw_centered(
+        LCD,
+        phase_name,
+        100,
+        LCD.WHITE
+    )
+
+
+    # -----------------------------------------------------
+    # OŚWIETLENIE
+    # -----------------------------------------------------
+
+    illumination_text = (
+        "%.1f%%"
+        % illumination
+    )
+
+    draw_centered(
+        LCD,
+        illumination_text,
+        125,
+        LCD.WHITE
+    )
+
+
+    # -----------------------------------------------------
+    # WYŚWIETLENIE
+    # -----------------------------------------------------
+
+    LCD.show_down()
+
+
+# =========================================================
+# START
+# =========================================================
+
+print("MOON UI")
+
+draw_screen()
+
+
+# =========================================================
+# PĘTLA DOTYKU
+# =========================================================
+
+last_action = None
 
 while True:
-    time.sleep(1)
+
+    action = get_action(LCD)
+
+    # -----------------------------------------------------
+    # Nowa akcja tylko po puszczeniu poprzedniego dotyku
+    # -----------------------------------------------------
+
+    if action is None:
+        last_action = None
+
+    elif action != last_action:
+
+        print("ACTION:", action)
+
+        # -------------------------------------------------
+        # POPRZEDNI DZIEŃ
+        # -------------------------------------------------
+
+        if action == "PREVIOUS_DAY":
+
+            (
+                VIEW_YEAR,
+                VIEW_MONTH,
+                VIEW_DAY
+            ) = change_day(
+                VIEW_YEAR,
+                VIEW_MONTH,
+                VIEW_DAY,
+                -1
+            )
+
+            draw_screen()
+
+
+        # -------------------------------------------------
+        # NASTĘPNY DZIEŃ
+        # -------------------------------------------------
+
+        elif action == "NEXT_DAY":
+
+            (
+                VIEW_YEAR,
+                VIEW_MONTH,
+                VIEW_DAY
+            ) = change_day(
+                VIEW_YEAR,
+                VIEW_MONTH,
+                VIEW_DAY,
+                +1
+            )
+
+            draw_screen()
+
+
+        # -------------------------------------------------
+        # DZISIAJ
+        # -------------------------------------------------
+
+        elif action == "TODAY":
+
+            VIEW_YEAR = TODAY_YEAR
+            VIEW_MONTH = TODAY_MONTH
+            VIEW_DAY = TODAY_DAY
+
+            draw_screen()
+
+
+        last_action = action
+
+    time.sleep_ms(50)
+    
