@@ -56,6 +56,63 @@ def change_day(year, month, day, delta):
         new_date[2]
     )
 
+# =========================================================
+# NAWIGACJA
+# =========================================================
+
+def draw_left_triangle(x, y, size, color):
+
+    for i in range(size):
+        width = 2 * i + 1
+
+        LCD.fill_rect(
+            x + size - i,
+            y + i,
+            width,
+            1,
+            color
+        )
+
+
+def draw_right_triangle(x, y, size, color):
+
+    for i in range(size):
+        width = 2 * i + 1
+
+        LCD.fill_rect(
+            x - size + i,
+            y + i,
+            width,
+            1,
+            color
+        )
+
+def draw_navigation():
+
+    draw_left_triangle(
+        35, 205, 10, LCD.WHITE
+    )
+
+    draw_right_triangle(
+        285, 205, 10, LCD.WHITE
+    )
+
+    # -----------------------------------------------------
+    # LEWA STRZAŁKA
+    # -----------------------------------------------------
+
+#     LCD.fill_rect(28, 205, 4, 20, LCD.WHITE)
+#     LCD.fill_rect(32, 209, 4, 12, LCD.WHITE)
+#     LCD.fill_rect(36, 213, 4, 4, LCD.WHITE)
+
+
+    # -----------------------------------------------------
+    # PRAWA STRZAŁKA
+    # -----------------------------------------------------
+
+#     LCD.fill_rect(292, 205, 4, 20, LCD.WHITE)
+#     LCD.fill_rect(288, 209, 4, 12, LCD.WHITE)
+#     LCD.fill_rect(284, 213, 4, 4, LCD.WHITE)
 
 # =========================================================
 # RYSOWANIE EKRANU
@@ -105,17 +162,26 @@ def draw_screen():
 
 
     # -----------------------------------------------------
-    # DATA
+    # DATA / DZISIAJ
     # -----------------------------------------------------
 
-    date_text = (
-        "%02d.%02d.%04d"
-        % (
-            VIEW_DAY,
-            VIEW_MONTH,
-            VIEW_YEAR
-        )
+    is_today = (
+        VIEW_YEAR == TODAY_YEAR and
+        VIEW_MONTH == TODAY_MONTH and
+        VIEW_DAY == TODAY_DAY
     )
+
+    if is_today:
+        date_text = "DZISIAJ"
+    else:
+        date_text = (
+            "%02d.%02d.%04d"
+            % (
+                VIEW_DAY,
+                VIEW_MONTH,
+                VIEW_YEAR
+            )
+        )
 
     draw_centered(
         LCD,
@@ -152,6 +218,12 @@ def draw_screen():
         125,
         LCD.WHITE
     )
+    
+    # -----------------------------------------------------
+    # NAWIGACJA
+    # -----------------------------------------------------
+
+    draw_navigation()
 
 
     # -----------------------------------------------------

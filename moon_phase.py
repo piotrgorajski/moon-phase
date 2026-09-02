@@ -302,9 +302,9 @@ def get_day_phase_name(
     # -----------------------------------------------------
 
     phases = (
-        (0.0, "NOW"),
+        (0.0, "NÓW"),
         (0.25, "PIERWSZA KWADRA"),
-        (0.5, "PELNIA"),
+        (0.5, "PEŁNIA"),
         (0.75, "OSTATNIA KWADRA")
     )
 
@@ -370,15 +370,15 @@ def get_day_phase_name(
     cycle = k % 1.0
 
     if cycle < 0.25:
-        return "ROSNACY SIERP"
+        return "ROSNĄCY SIERP"
 
     if cycle < 0.50:
-        return "ROSNACY GARB"
+        return "ROSNĄCY GARB"
 
     if cycle < 0.75:
-        return "MALEJACY GARB"
+        return "MALEJĄCY GARB"
 
-    return "MALEJACY SIERP"
+    return "MALEJĄCY SIERP"
 
 
 # =========================================================
