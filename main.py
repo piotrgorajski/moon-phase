@@ -62,11 +62,17 @@ def change_day(year, month, day, delta):
 
 def draw_left_triangle(x, y, size, color):
 
+    center = size // 2
+
     for i in range(size):
-        width = 2 * i + 1
+
+        if i <= center:
+            width = 2 * i + 1
+        else:
+            width = 2 * (size - 1 - i) + 1
 
         LCD.fill_rect(
-            x + size - i,
+            x - width + 1,
             y + i,
             width,
             1,
@@ -76,43 +82,33 @@ def draw_left_triangle(x, y, size, color):
 
 def draw_right_triangle(x, y, size, color):
 
+    center = size // 2
+
     for i in range(size):
-        width = 2 * i + 1
+
+        if i <= center:
+            width = 2 * i + 1
+        else:
+            width = 2 * (size - 1 - i) + 1
 
         LCD.fill_rect(
-            x - size + i,
+            x,
             y + i,
             width,
             1,
             color
         )
 
+
 def draw_navigation():
 
     draw_left_triangle(
-        35, 205, 10, LCD.WHITE
+        35, 205, 25, LCD.WHITE
     )
 
     draw_right_triangle(
-        285, 205, 10, LCD.WHITE
+        285, 205, 25, LCD.WHITE
     )
-
-    # -----------------------------------------------------
-    # LEWA STRZAŁKA
-    # -----------------------------------------------------
-
-#     LCD.fill_rect(28, 205, 4, 20, LCD.WHITE)
-#     LCD.fill_rect(32, 209, 4, 12, LCD.WHITE)
-#     LCD.fill_rect(36, 213, 4, 4, LCD.WHITE)
-
-
-    # -----------------------------------------------------
-    # PRAWA STRZAŁKA
-    # -----------------------------------------------------
-
-#     LCD.fill_rect(292, 205, 4, 20, LCD.WHITE)
-#     LCD.fill_rect(288, 209, 4, 12, LCD.WHITE)
-#     LCD.fill_rect(284, 213, 4, 4, LCD.WHITE)
 
 # =========================================================
 # RYSOWANIE EKRANU
