@@ -4,18 +4,34 @@ from moon_phase import moon_phase
 from moon_renderer import draw_moon, LCD
 from ui import draw_centered
 from touch import get_action
+from rtc import get_datetime
 
 
 # =========================================================
-# DZISIEJSZA DATA - NA RAZIE TESTOWA
+# DATA I CZAS Z RTC
 # =========================================================
 
-TODAY_YEAR = 2026
-TODAY_MONTH = 8
-TODAY_DAY = 27
+(
+    TODAY_YEAR,
+    TODAY_MONTH,
+    TODAY_DAY,
+    HOUR,
+    MINUTE,
+    SECOND
+) = get_datetime()
 
-HOUR = 0
-MINUTE = 0
+print(
+    "RTC:",
+    "%04d-%02d-%02d %02d:%02d:%02d"
+    % (
+        TODAY_YEAR,
+        TODAY_MONTH,
+        TODAY_DAY,
+        HOUR,
+        MINUTE,
+        SECOND
+    )
+)
 
 
 # =========================================================
