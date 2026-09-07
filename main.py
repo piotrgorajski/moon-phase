@@ -103,11 +103,11 @@ def draw_right_triangle(x, y, size, color):
 def draw_navigation():
 
     draw_left_triangle(
-        35, 205, 25, LCD.WHITE
+        35, 156, 22, LCD.WHITE
     )
 
     draw_right_triangle(
-        285, 205, 25, LCD.WHITE
+        285, 156, 22, LCD.WHITE
     )
 
 # =========================================================
@@ -154,37 +154,13 @@ def draw_screen():
     # KSIĘŻYC
     # -----------------------------------------------------
 
+    import time
+    start = time.ticks_ms()
+
     draw_moon(phase)
 
-
-    # -----------------------------------------------------
-    # DATA / DZISIAJ
-    # -----------------------------------------------------
-
-    is_today = (
-        VIEW_YEAR == TODAY_YEAR and
-        VIEW_MONTH == TODAY_MONTH and
-        VIEW_DAY == TODAY_DAY
-    )
-
-    if is_today:
-        date_text = "DZISIAJ"
-    else:
-        date_text = (
-            "%02d.%02d.%04d"
-            % (
-                VIEW_DAY,
-                VIEW_MONTH,
-                VIEW_YEAR
-            )
-        )
-
-    draw_centered(
-        LCD,
-        date_text,
-        75,
-        LCD.WHITE
-    )
+    elapsed = time.ticks_diff(time.ticks_ms(), start)
+    print("Czas wykonania:", elapsed, "ms")
 
 
     # -----------------------------------------------------
@@ -194,7 +170,7 @@ def draw_screen():
     draw_centered(
         LCD,
         phase_name,
-        100,
+        80,
         LCD.WHITE
     )
 
@@ -211,9 +187,46 @@ def draw_screen():
     draw_centered(
         LCD,
         illumination_text,
-        125,
+        105,
         LCD.WHITE
     )
+    
+    # -----------------------------------------------------
+    # DATA / DZISIAJ
+    # -----------------------------------------------------
+
+    is_today = (
+        VIEW_YEAR == TODAY_YEAR and
+        VIEW_MONTH == TODAY_MONTH and
+        VIEW_DAY == TODAY_DAY
+    )
+
+#     if is_today:
+#         date_text = "DZISIAJ"
+#     else:
+    date_text = (
+        "%02d.%02d.%04d"
+        % (
+            VIEW_DAY,
+            VIEW_MONTH,
+            VIEW_YEAR
+        )
+    )
+
+    draw_centered(
+        LCD,
+        date_text,
+        160,
+        LCD.WHITE
+    )
+    
+    if is_today:
+        draw_centered(
+            LCD,
+            "(DZISIAJ)",
+            180,
+            LCD.WHITE
+        )
     
     # -----------------------------------------------------
     # NAWIGACJA

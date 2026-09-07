@@ -376,9 +376,9 @@ def get_day_phase_name(
         return "ROSNĄCY GARB"
 
     if cycle < 0.75:
-        return "MALEJĄCY GARB"
+        return "ZNIKAJĄCY GARB"
 
-    return "MALEJĄCY SIERP"
+    return "ZNIKAJĄCY SIERP"
 
 
 # =========================================================
