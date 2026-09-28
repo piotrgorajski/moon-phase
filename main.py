@@ -1,7 +1,7 @@
 import time
 
 from moon_phase import moon_phase
-from moon_renderer import draw_moon, LCD
+from exp_moon_renderer import draw_moon, LCD
 from ui import draw_centered
 from touch import get_action
 from rtc import get_datetime
